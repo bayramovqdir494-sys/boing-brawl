@@ -7,8 +7,8 @@ function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);const ww=inne
 addEventListener('resize',resize);resize();
 // ---------- SDK ----------
 const SDK={ok:false,s:null,
- async init(){try{if(window.CrazyGames&&CrazyGames.SDK){await CrazyGames.SDK.init();this.s=CrazyGames.SDK;this.ok=true;}}catch(e){this.ok=false;}},
- call(f){try{if(this.ok&&this.s.game&&this.s.game[f])this.s.game[f]();}catch(e){}},
+ async init(){try{if(window.CrazyGames&&CrazyGames.SDK){await Promise.race([CrazyGames.SDK.init(),new Promise((_,j)=>setTimeout(()=>j('timeout'),4000))]);this.s=CrazyGames.SDK;this.ok=true;}}catch(e){this.ok=false;}},
+ call(f){if(f.startsWith('gameplay')){if(this.gp===f)return;this.gp=f;}try{if(this.ok&&this.s.game&&this.s.game[f])this.s.game[f]();}catch(e){}},
  ad(type,done,fail){if(!this.ok){done&&done(true);return;}let fin=false;const end=(r)=>{if(fin)return;fin=true;Audio.resume();r?done&&done(true):(fail?fail():done&&done(false));};
   try{Audio.mute(true);this.s.ad.requestAd(type,{adStarted:()=>{},adFinished:()=>{Audio.mute(false);end(true);},adError:()=>{Audio.mute(false);end(false);}});}catch(e){Audio.mute(false);end(false);}}};
 // ---------- save ----------
