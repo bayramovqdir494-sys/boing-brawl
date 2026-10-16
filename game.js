@@ -423,7 +423,8 @@ function drawShop(){const th=THEMES[4];drawBG(th,640);drawGround(th);txt('SHOP',
   if(l<u.max){const c=u.cost(l);btn(860,y+28,190,70,'',()=>{if(S.coins>=c){S.coins-=c;S.upg[k]++;save();Audio.play('win');}else noCoins();},['#ffd24d','#f08a00'],24,(cx,cy)=>{coin(cx-45,cy,15,0);txt(String(c),cx+12,cy,26,'#fff');});}else txt('MAX',955,y+62,34,'#7dff6b');});}
  btn(30,630,160,76,'BACK',()=>scene='title',['#ff8ad8','#e0359e'],30);}
 function trajectory(vx,vy){const p=G.p;let x=p.x,y=p.y;ctx.fillStyle='#fff';for(let k=1;k<=22;k++){const t=k*.035;const px=x+vx*t+(G.L.wind||0)*t*t*.5,py=y+vy*t+750*t*t;if(py>GY)break;ctx.globalAlpha=1-k/24;ctx.beginPath();ctx.arc(px,py,7-k*.2,0,7);ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=OUT;ctx.stroke();}ctx.globalAlpha=1;}
-function aimVel(){const a=G.aim;if(!a)return null;let dx=a.sx-a.x,dy=a.sy-a.y;const d=Math.hypot(dx,dy);if(d<18)return null;const pw=Math.min(d,220)/220*power();return[dx/d*pw,dy/d*pw,Math.min(d,220)/220];}
+function maxPull(){const m=Math.min(innerWidth,innerHeight)*0.22/(scale||1);return Math.max(70,Math.min(220,m));}
+function aimVel(){const a=G.aim;if(!a)return null;const M=a.kb?220:maxPull();let dx=a.sx-a.x,dy=a.sy-a.y;const d=Math.hypot(dx,dy);if(d<Math.min(18,M*.12))return null;const f=Math.min(d,M)/M;const pw=f*power();return[dx/d*pw,dy/d*pw,f];}
 function drawGame(dt){const L=G.L,th=L.th,p=G.p;
  ctx.save();if(shake>0){ctx.translate(rnd(-shake,shake),rnd(-shake,shake));}
  drawBG(th,p.x);drawGround(th);for(const z of L.haz)drawHaz(z);
@@ -439,7 +440,7 @@ function drawGame(dt){const L=G.L,th=L.th,p=G.p;
  if(spd>700){const gl=ctx.createRadialGradient(p.x,p.y,5,p.x,p.y,p.r*2.2);gl.addColorStop(0,'rgba(255,255,200,.6)');gl.addColorStop(1,'rgba(255,255,200,0)');ctx.fillStyle=gl;ctx.fillRect(p.x-80,p.y-80,160,160);}
  const av=aimVel();const look=av?[av[0]/power(),av[1]/power()]:spd>50?[p.vx/spd,p.vy/spd]:[1,0];
  if(av){ctx.strokeStyle='#ff4f9a';ctx.lineWidth=6;ctx.setLineDash([12,10]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-av[0]/power()*120,p.y-av[1]/power()*120);ctx.stroke();ctx.setLineDash([]);trajectory(av[0],av[1]);
-  const pw=av[2];ctx.fillStyle=OUT;rr(p.x-40,p.y-p.r-30,80,14,7);ctx.fill();ctx.fillStyle=pw>.85?'#ff3b30':pw>.5?'#ffd60a':'#7dff6b';rr(p.x-38,p.y-p.r-28,76*pw,10,5);ctx.fill();}
+  const pw=av[2];ctx.fillStyle=OUT;rr(p.x-40,p.y-p.r-30,80,14,7);ctx.fill();ctx.fillStyle=pw>.85?'#ff3b30':pw>.5?'#ffd60a':'#7dff6b';rr(p.x-38,p.y-p.r-28,76*pw,10,5);ctx.fill();if(pw>=.999){ctx.fillStyle='#fff';ctx.font='900 16px Arial Black,Arial';ctx.textAlign='center';ctx.fillText('MAX',p.x,p.y-p.r-36);}}
  for(const m of G.minis){ctx.globalAlpha=Math.min(1,m.l*2);drawHero(m.x,m.y,m.r,S.skin,1,[Math.sign(m.vx)||1,0],T);}ctx.globalAlpha=1;
  drawHero(p.x,p.y,p.r,S.skin,p.sq,look,T);heroDeco(S.hero,p.x,p.y,p.r,T);
  for(const q of parts){if(q.ring){const k=1-q.l/q.ml;ctx.globalAlpha=q.l/q.ml;ctx.strokeStyle=q.c;ctx.lineWidth=8*(1-k)+1;ctx.beginPath();ctx.arc(q.x,q.y,lerp(q.r,q.mr,k),0,7);ctx.stroke();continue;}ctx.globalAlpha=clamp(q.l/q.ml*1.5,0,1);ctx.fillStyle=q.c;if(q.sh){ctx.save();ctx.translate(q.x,q.y);ctx.rotate(q.rot);ctx.fillRect(-q.s/2,-q.s/2,q.s,q.s);ctx.restore();}else{ctx.beginPath();ctx.arc(q.x,q.y,q.s*(q.l/q.ml*.5+.5),0,7);ctx.fill();}}ctx.globalAlpha=1;
@@ -495,7 +496,7 @@ function frame(now){const ts=window.__ts||1;let dt=Math.min(.05,(now-last)/1000)
  requestAnimationFrame(frame);}
 // ---------- input ----------
 function toLocal(e){return{x:(e.clientX-offX)/scale,y:(e.clientY-offY)/scale};}
-cv.addEventListener('pointerdown',e=>{e.preventDefault();Audio.init();Audio.resume();const q=toLocal(e);ptr.x=q.x;ptr.y=q.y;ptr.down=true;
+cv.addEventListener('pointerdown',e=>{e.preventDefault();Audio.init();Audio.resume();const q=toLocal(e);ptr.x=q.x;ptr.y=q.y;ptr.down=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}
  for(let k=buttons.length-1;k>=0;k--){const b=buttons[k];if(q.x>b.x&&q.x<b.x+b.w&&q.y>b.y&&q.y<b.y+b.h){Audio.play('click');trans=0;b.cb();ptr.down=false;return;}}
  if(scene=='game'&&G&&!panel&&!G.done&&G.shots>0){G.aim={sx:q.x,sy:q.y,x:q.x,y:q.y};banner=Math.min(banner,.3);}});
 addEventListener('pointermove',e=>{const q=toLocal(e);ptr.x=q.x;ptr.y=q.y;if(G&&G.aim){G.aim.x=q.x;G.aim.y=q.y;}});
